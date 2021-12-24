@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import React from "react";
-import { interval, Subject, fromEvent } from "rxjs";
-import { takeUntil, buffer, debounceTime, map, filter } from "rxjs/operators";
+import { interval, Subject } from "rxjs";
+import { takeUntil } from "rxjs/operators";
 import styles from "./App.module.css";
+import { useRef } from "react";
+import useDoubleClick from "use-double-click";
 const App = () => {
   const [sec, setSec] = useState(0);
   const [status, setStatus] = useState("stop");
@@ -26,9 +28,6 @@ const App = () => {
   const start = React.useCallback(() => {
     setStatus("run");
     setSec(0);
-    // if (status === "wait") {
-    //   setSec(0);
-    // }
   }, []);
 
   const stop = React.useCallback(() => {
@@ -39,25 +38,15 @@ const App = () => {
   const reset = React.useCallback(() => {
     setSec(0);
   }, []);
+  const wait = useRef();
 
-  const wait = React.useCallback(() => {
-    setStatus("wait");
-    console.log(status);
-    const click$ = fromEvent(document, "click");
-
-    const doubleClick$ = click$.pipe(
-      buffer(click$.pipe(debounceTime(30000))),
-      map(list => {
-        return list.length;
-      }),
-      filter(x => x === 2)
-    );
-
-    const $timer = interval(10000).pipe(takeUntil(doubleClick$));
-
-    $timer.subscribe(console.log);
-  }, []);
-
+  useDoubleClick({
+    onDoubleClick: e => {
+      setStatus("wait");
+    },
+    ref: wait,
+    latency: 300
+  });
   return (
     <>
       {" "}
@@ -67,7 +56,7 @@ const App = () => {
           <button onClick={start}>Start</button>
           <button onClick={stop}>Stop</button>
           <button onClick={reset}>Reset</button>
-          <button onClick={wait}>Wait</button>
+          <button ref={wait}>Wait</button>
         </div>
       </div>
     </>
